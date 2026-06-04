@@ -1,0 +1,24 @@
+# Copy to .github/workflows/tests.yml when wiring up CI.
+name: tests
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install nltk pandas numpy pytest pytest-cov nbmake
+      - name: Pre-download NLTK corpora
+        run: python -m nltk.downloader gutenberg inaugural wordnet
+      - name: Run tests
+        run: pytest --cov=nlp_app --cov-report=term-missing
+      # Optional notebook smoke test (P3):
+      # - run: pytest --nbmake "NLP AI Application.ipynb"
