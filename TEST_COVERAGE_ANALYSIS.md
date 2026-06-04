@@ -30,6 +30,12 @@ of order and stale globals persist between runs.
 2. **Cell 32** — `e_1.append(np_hyp[i][0])` references `np_hyp`, but the list
    built in cell 30 is named `a_hyp`. This also raises `NameError` on a clean
    run.
+3. **Cell 13** *(found later by the notebook smoke test)* — the
+   `for m in modals:` concordance loop is mis-indented one level too shallow, so
+   it runs for **every** gutenberg file while `moby` is only assigned for files
+   in `mst_used_text`. On a clean kernel the first file isn't a match, so `moby`
+   is undefined when the loop uses it → `NameError`. Same "stale global hides
+   the error" class as the other two; nesting the loop inside the `if` fixes it.
 
 There are also correctness/robustness concerns worth pinning down with tests:
 
@@ -130,3 +136,18 @@ break the output.
 This moves the project from **0% / untestable** to a measurable baseline and
 prevents the class of "stale global / out-of-order cell" bug that currently
 hides real errors.
+
+## 7. Status — implemented
+
+This milestone has now been implemented on this branch:
+
+- `nlp_app/analysis.py` extracts the six pure functions (no I/O, no downloads,
+  no globals). The `.isalpha()` filter is now applied to `top_long_words`, and
+  empty-input divide-by-zero is guarded.
+- `tests/test_analysis.py` + `tests/conftest.py` provide 15 tests (P0 + P1 + P2).
+  P2 WordNet tests skip cleanly when the corpus is absent. Measured coverage of
+  `nlp_app` is **~98%**.
+- All **three** bugs above are fixed in the notebook with a minimal 6-line diff.
+- `.github/workflows/tests.yml` runs pytest with coverage (floor 70%) and the
+  `nbmake` notebook smoke test — the latter is what surfaced bug #3.
+- `pyproject.toml` declares the package, deps, and the `wordnet` marker.
